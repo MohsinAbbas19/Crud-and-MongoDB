@@ -1,0 +1,56 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// MongoDB connection
+mongoose.connect('mongodb://localhost:27017/employeeDB', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connection.on('error', console.error.bind(console, 'MongoDB connection error:'));
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// Employee model
+const Employee = mongoose.model('Employee', {
+  name: String,
+  position: String,
+  office: String,
+  salary: Number,
+});
+
+// Routes
+app.get('/employees', async (req, res) => {
+  const employees = await Employee.find();
+  res.json(employees);
+});
+
+app.post('/employees', async (req, res) => {
+  const { name, position, office, salary } = req.body;
+  const employee = new Employee({ name, position, office, salary });
+  await employee.save();
+  res.json(employee);
+});
+
+app.get('/employees/:id', async (req, res) => {
+  const employee = await Employee.findById(req.params.id);
+  res.json(employee);
+});
+
+app.put('/employees/:id', async (req, res) => {
+  const { name, position, office, salary } = req.body;
+  const updatedEmployee = await Employee.findByIdAndUpdate(req.params.id, { name, position, office, salary }, { new: true });
+  res.json(updatedEmployee);
+});
+
+app.delete('/employees/:id', async (req, res) => {
+  await Employee.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Employee deleted successfully.' });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
